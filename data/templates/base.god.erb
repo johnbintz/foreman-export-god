@@ -1,12 +1,21 @@
 <% engine.procfile.entries.each do |process| %>
   <% 1.upto(concurrency[process.name]) do |num| %>
+    <% p process.name %>
 God.watch do |w|
   w.name = "<%= "#{process.name}-#{num}" %>"
   w.start = "<%= process.command %>"
+  w.env = { 'RAILS_ENV' => <%= ENV['RAILS_ENV'] %> }
   w.keepalive
   w.group = "<%= app  %>"
   w.dir = "<%= engine.directory %>" 
     <%= extension(process.name) %>
+
+  w.restart_if do |restart|
+    restart.condition(:memory_usage) do |c|
+      c.above = 500.megabytes
+      c.times = [5, 10] # 3 out of 5 intervals
+    end
+  end
 end
   <% end %>
 <% end %>
